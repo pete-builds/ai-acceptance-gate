@@ -1,0 +1,43 @@
+[build-system]
+requires = ["hatchling==1.27.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ai-acceptance-gate"
+version = "0.1.0"
+description = "A release gate for AI chat endpoints: expected answers, prohibited claims, refusals and handoffs in YAML, run against the real endpoint, pass or fail for CI."
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+dependencies = [
+  "httpx>=0.27,<1",
+  "pydantic>=2.6,<3",
+  "pyyaml>=6,<7",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest==8.4.2",
+  "ruff==0.13.3",
+]
+
+[project.scripts]
+acceptance-gate = "acceptance_gate.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/acceptance_gate"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM"]
+
+[tool.ruff.lint.per-file-ignores]
+# A server context wrapping pytest.raises reads better nested.
+"tests/*" = ["SIM117"]

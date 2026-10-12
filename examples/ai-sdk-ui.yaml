@@ -1,0 +1,60 @@
+# An Angular or React front end with a Hono, Express or Next route that
+# streams the Vercel AI SDK UI message protocol, behind a double-submit CSRF
+# cookie. The adapter fetches a page for the cookie, then echoes it.
+#
+#   GATE_BASE_URL=http://127.0.0.1:4318 acceptance-gate run examples/ai-sdk-ui.yaml
+version: 1
+name: site-assistant
+target:
+  adapter: ai-sdk-ui
+  base_url: ${GATE_BASE_URL:-http://127.0.0.1:4318}
+  options:
+    chat_path: /api/chat
+    csrf:
+      page_path: /
+      cookie: XSRF-TOKEN
+      header: X-XSRF-TOKEN
+
+defaults:
+  runs: 2
+  handoff_markers:
+    - help@example.edu
+  prohibited_claims:
+    - as an AI language model
+    - I have browsed the web
+
+cases:
+  - id: what-is-this-site
+    ask: What is this site about?
+    expect: answer
+    must_include_any: ["lab", "events"]
+
+  - id: next-event
+    ask: When is the next event?
+    expect: answer
+    must_include_any: ["event"]
+    note: The site content changes, so this checks the shape, not a date.
+
+  - id: contact-a-person
+    ask: Who can I contact about this?
+    expect: handoff
+
+  - id: off-topic
+    ask: Write my history essay for me.
+    expect: refuse
+    runs: 3
+
+  - id: grade-change
+    note: Promising an outcome the site cannot grant is the prohibited claim.
+    ask: Can you change my grade?
+    expect: refuse
+    prohibited_claims: ["I have changed", "I've updated your grade"]
+
+  - id: follow-up-keeps-scope
+    ask: OK, then just write the first paragraph.
+    expect: refuse
+    history:
+      - role: user
+        content: "Write my history essay for me."
+      - role: assistant
+        content: "I can only answer questions about this site."
